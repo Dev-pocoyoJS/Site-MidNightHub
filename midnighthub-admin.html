@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MidNightHub — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, getDoc, doc,
+    setDoc, updateDoc, deleteDoc, query, orderBy, limit, where,
+    serverTimestamp, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA4s0GjPhqFXO27d7e_YAn_4z0aP96etx0",
+    authDomain: "midnighthub-24ded.firebaseapp.com",
+    databaseURL: "https://midnighthub-24ded-default-rtdb.firebaseio.com",
+    projectId: "midnighthub-24ded",
+    storageBucket: "midnighthub-24ded.firebasestorage.app",
+    messagingSenderId: "917046130567",
+    appId: "1:917046130567:web:b39f1fcc064df530c40522",
+    measurementId: "G-Q67E5KW6BQ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window._db = db;
+  window._fs = {
+    collection, addDoc, getDocs, getDoc, doc, setDoc,
+    updateDoc, deleteDoc, query, orderBy, limit, where,
+    serverTimestamp, onSnapshot
+  };
+  window._firebaseReady = true;
+  window.dispatchEvent(new Event('firebaseReady'));
+</script>
+
+<style>
+:root{
+  --red:#ff0033;--red2:#ff003366;--red3:#ff003318;
+  --dark:#03030a;--dark2:#06060f;--card:#0a0a18;--card2:#0d0d20;
+  --border:#ff003318;--border2:#ff003440;--border3:#ff003360;
+  --text:#d8d8ee;--muted:#6666aa;--dim:#333355;
+  --green:#00ff88;--yellow:#ffcc00;--orange:#ff6600;
+  --glow:0 0 20px #ff003355,0 0 50px #ff003322;
+  --glow-sm:0 0 10px #ff003344;--glow-xs:0 0 6px #ff003333;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--dark);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex}
+
+/* LOGIN SCREEN */
+#login-screen{
+  position:fixed;inset:0;z-index:999;
+  background:var(--dark);
+  display:flex;align-items:center;justify-content:center;
+}
+.login-box{
+  width:420px;background:var(--card);
+  border:1px solid var(--border3);
+  clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px));
+  box-shadow:var(--glow);padding:44px 40px;text-align:center;
+  animation:fadein .5s ease;
+}
+@keyframes fadein{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.login-logo{font-family:'Orbitron',monospace;font-size:24px;font-weight:900;color:var(--red);letter-spacing:3px;text-shadow:var(--glow-sm);margin-bottom:4px}
+.login-logo em{color:var(--text);font-style:normal}
+.login-badge{font-size:10px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:36px}
+.login-label{display:block;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;text-align:left;margin-bottom:8px}
+.login-input{
+  width:100%;background:#030308;border:1px solid var(--border2);
+  color:var(--text);padding:14px 16px;font-family:'Rajdhani',sans-serif;font-size:15px;
+  outline:none;margin-bottom:16px;transition:border-color .2s;
+}
+.login-input:focus{border-color:var(--red);box-shadow:var(--glow-xs)}
+.login-err{color:var(--red);font-size:13px;margin-bottom:14px;display:none}
+.login-err.show{display:block}
+.btn-login-go{
+  width:100%;background:var(--red);color:#fff;border:none;
+  padding:14px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .3s;
+}
+.btn-login-go:hover{box-shadow:var(--glow-sm);transform:translateY(-1px)}
+
+/* SIDEBAR */
+aside{
+  width:240px;min-height:100vh;background:var(--dark2);
+  border-right:1px solid var(--border2);
+  display:flex;flex-direction:column;flex-shrink:0;
+  position:fixed;top:0;left:0;bottom:0;z-index:100;
+}
+.sidebar-logo{
+  padding:24px 24px 20px;
+  border-bottom:1px solid var(--border);
+}
+.sidebar-logo-text{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:var(--red);letter-spacing:2px;text-shadow:var(--glow-xs)}
+.sidebar-logo-text em{color:var(--text);font-style:normal}
+.sidebar-logo-sub{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-top:3px}
+
+nav.sidebar-nav{flex:1;padding:20px 0}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 24px;font-size:13px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:var(--muted);
+  cursor:pointer;transition:all .2s;border-left:2px solid transparent;
+}
+.nav-item:hover{color:var(--text);background:var(--red3)}
+.nav-item.active{color:var(--red);background:var(--red3);border-left-color:var(--red)}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+
+.sidebar-footer{
+  padding:20px 24px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--dim);letter-spacing:1px;
+}
+.sidebar-footer .admin-name{color:var(--muted);font-weight:700;margin-bottom:4px}
+
+/* MAIN */
+main{margin-left:240px;flex:1;min-height:100vh;padding:0}
+
+.topbar{
+  background:rgba(3,3,10,.9);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border2);
+  padding:0 36px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.topbar-title{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#fff;letter-spacing:2px}
+.topbar-status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.status-dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+.content{padding:36px;display:none}
+.content.active{display:block}
+
+/* STAT CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:32px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border2);padding:20px 22px;
+  position:relative;overflow:hidden;
+}
+.stat-card::after{content:'';position:absolute;top:0;right:0;width:3px;height:100%;background:var(--red)}
+.stat-label{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.stat-value{font-family:'Orbitron',monospace;font-size:32px;font-weight:900;color:#fff}
+.stat-sub{font-size:12px;color:var(--dim);margin-top:6px}
+.stat-card.green::after{background:var(--green)}
+.stat-card.yellow::after{background:var(--yellow)}
+.stat-card.orange::after{background:var(--orange)}
+
+/* SECTION CARD */
+.panel{background:var(--card);border:1px solid var(--border);margin-bottom:24px}
+.panel-head{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.panel-title{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#fff;letter-spacing:2px}
+.panel-body{padding:24px}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 14px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border2)}
+td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px}
+tr:hover td{background:var(--red3)}
+.badge{display:inline-block;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:1px;border-radius:0}
+.badge.active{background:#00ff8822;color:var(--green);border:1px solid #00ff8833}
+.badge.pending{background:#ffcc0022;color:var(--yellow);border:1px solid #ffcc0033}
+.badge.banned{background:#ff003322;color:var(--red);border:1px solid var(--border3)}
+.badge.expired{background:#55555522;color:var(--muted);border:1px solid var(--dim)}
+
+/* FORM */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.form-input{
+  width:100%;background:#030308;border:1px solid var(--dim);
+  color:var(--text);padding:11px 14px;
+  font-family:'Rajdhani',sans-serif;font-size:15px;
+  outline:none;transition:border-color .2s;
+}
+.form-input:focus{border-color:var(--red);box-shadow:var(--glow-xs)}
+textarea.form-input{min-height:120px;resize:vertical;font-family:'Share Tech Mono',monospace;font-size:13px;color:#4dffaa}
+select.form-input option{background:#0a0a18}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-hint{font-size:11px;color:var(--dim);margin-top:6px}
+
+/* BUTTONS */
+.btn{
+  padding:10px 22px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .3s;border:none;
+}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{box-shadow:var(--glow-sm);transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.btn-outline:hover{border-color:var(--red);color:var(--red)}
+.btn-danger{background:transparent;border:1px solid #660011;color:#ff003377}
+.btn-danger:hover{background:#ff003311;color:var(--red);border-color:var(--red)}
+.btn-sm{padding:6px 14px;font-size:9px}
+.btn-full{width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* CHART BAR */
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:80px;padding-top:8px}
+.chart-bar{flex:1;background:var(--red2);transition:height .3s;min-width:8px;position:relative}
+.chart-bar:hover{background:var(--red)}
+.chart-bar::after{content:attr(data-v);position:absolute;bottom:calc(100%+4px);left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);white-space:nowrap}
+.chart-labels{display:flex;gap:4px;margin-top:6px}
+.chart-label{flex:1;font-size:9px;color:var(--dim);text-align:center}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--card2);border:1px solid var(--border2);border-left:3px solid var(--red);
+  color:var(--text);padding:14px 20px;font-size:14px;
+  box-shadow:var(--glow-xs);max-width:360px;
+  transform:translateX(200%);opacity:0;transition:all .3s;
+}
+.toast.show{transform:none;opacity:1}
+
+/* SPIN */
+.spin{display:inline-block;width:13px;height:13px;border:2px solid #ffffff33;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* KEYS TABLE ACTIONS */
+.action-btns{display:flex;gap:6px;flex-wrap:wrap}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;z-index:800;background:rgba(3,3,10,.95);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:16px}
+.overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border3);width:100%;max-width:520px;box-shadow:var(--glow);animation:fadein .3s ease}
+.modal-head{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:#fff}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;transition:color .2s}
+.modal-close:hover{color:var(--red)}
+.modal-body{padding:24px 28px}
+
+@media(max-width:800px){
+  aside{width:200px}main{margin-left:200px}
+}
+@media(max-width:600px){
+  aside{display:none}main{margin-left:0}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ====== LOGIN SCREEN ====== -->
+<div id="login-screen">
+  <div class="login-box">
+    <img src="https://i.imgur.com/8EaO4fb.png" alt="MidNightHub" style="height:52px;filter:drop-shadow(0 0 12px #ff003388);margin-bottom:4px">
+    <div class="login-badge">Painel Administrativo</div>
+    <label class="login-label">Usuário</label>
+    <input class="login-input" id="adm-user" placeholder="admin" autocomplete="username">
+    <label class="login-label">Senha</label>
+    <input class="login-input" type="password" id="adm-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <div class="login-err" id="adm-err">❌ Credenciais inválidas.</div>
+    <button class="btn-login-go" onclick="doAdminLogin()">ENTRAR</button>
+  </div>
+</div>
+
+<!-- ====== SIDEBAR ====== -->
+<aside>
+  <div class="sidebar-logo">
+    <img src="https://i.imgur.com/8EaO4fb.png" alt="MidNightHub" style="height:28px;filter:drop-shadow(0 0 6px #ff003366);margin-bottom:4px">
+    <div class="sidebar-logo-sub">Admin Panel</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="showTab('overview')"><span class="icon">📊</span> Overview</div>
+    <div class="nav-item" onclick="showTab('keys')"><span class="icon">🔑</span> Keys</div>
+    <div class="nav-item" onclick="showTab('orders')"><span class="icon">💳</span> Vendas</div>
+    <div class="nav-item" onclick="showTab('script')"><span class="icon">📜</span> Script</div>
+    <div class="nav-item" onclick="showTab('config')"><span class="icon">⚙️</span> Configurações</div>
+    <div class="nav-item" onclick="showTab('reviews')"><span class="icon">⭐</span> Reviews</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="admin-name">Admin</div>
+    <div>MidNightHub v1.0</div>
+  </div>
+</aside>
+
+<!-- ====== MAIN ====== -->
+<main>
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">OVERVIEW</div>
+    <div class="topbar-status">
+      <div class="status-dot"></div>
+      <span id="topbar-luarmor">Luarmor: verificando...</span>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="content active" id="tab-overview">
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Vendas Hoje</div>
+        <div class="stat-value" id="stat-today">0</div>
+        <div class="stat-sub">pedidos aprovados</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">Vendas Semana</div>
+        <div class="stat-value" id="stat-week">0</div>
+        <div class="stat-sub">últimos 7 dias</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Vendas Mês</div>
+        <div class="stat-value" id="stat-month">0</div>
+        <div class="stat-sub">últimos 30 dias</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Total Keys</div>
+        <div class="stat-value" id="stat-total-keys">0</div>
+        <div class="stat-sub">keys geradas</div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">VENDAS — ÚLTIMOS 7 DIAS</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-bars" id="chart-bars"></div>
+        <div class="chart-labels" id="chart-labels"></div>
+      </div>
+    </div>
+
+    <!-- ÚLTIMAS VENDAS -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">ÚLTIMAS VENDAS</span>
+        <button class="btn btn-outline btn-sm" onclick="showTab('orders')">VER TODAS</button>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table id="overview-orders-table">
+            <thead><tr><th>Email</th><th>Plano</th><th>Key</th><th>Status</th><th>Data</th></tr></thead>
+            <tbody id="overview-orders-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEYS -->
+  <div class="content" id="tab-keys">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">GERAR KEY MANUAL</span>
+      </div>
+      <div class="panel-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Plano</label>
+            <select class="form-input" id="gen-plan">
+              <option value="7">7 Dias</option>
+              <option value="15">15 Dias</option>
+              <option value="30" selected>30 Dias</option>
+              <option value="-1">Permanente</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail do usuário (opcional)</label>
+            <input class="form-input" id="gen-email" placeholder="user@exemplo.com" type="email">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nota (opcional)</label>
+            <input class="form-input" id="gen-note" placeholder="ex: giveaway discord">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-red btn-full" onclick="generateKey()">⚡ GERAR KEY</button>
+          </div>
+        </div>
+        <div id="gen-result" style="display:none;margin-top:12px;background:#030308;border:1px solid var(--border2);padding:16px">
+          <div class="form-label">KEY GERADA</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--red);letter-spacing:2px;margin-top:6px" id="gen-result-key"></div>
+          <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="copyGenKey()">COPIAR</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">TODAS AS KEYS</span>
+        <button class="btn btn-outline btn-sm" onclick="loadKeys()">↻ ATUALIZAR</button>
+      </div>
+      <div class="panel-body">
+        <div class="form-group" style="margin-bottom:14px">
+          <input class="form-input" id="search-key" placeholder="Buscar por key, email ou HWID..." oninput="filterKeys(this.value)">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Key</th><th>Plano</th><th>Email</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="keys-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="content" id="tab-orders">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">GERENCIAR VENDAS</span>
+        <button class="btn btn-outline btn-sm" onclick="loadOrders()">↻ ATUALIZAR</button>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Email</th><th>Plano</th><th>Preço</th><th>Key</th><th>Status</th><th>Data</th><th>Ação</th></tr></thead>
+            <tbody id="orders-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT -->
+  <div class="content" id="tab-script">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">SCRIPT DO HUB (Luarmor)</span></div>
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="form-label">Script ID Luarmor</label>
+          <input class="form-input" value="d50d096921fc3d6157990616b5c64e97" readonly style="color:var(--muted);cursor:not-allowed">
+          <div class="form-hint">Script: tsunami brainrot · ID fixo via Luarmor</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Conteúdo do Script (salvo no Firebase)</label>
+          <textarea class="form-input" id="script-content" placeholder="-- Cole aqui o script que os usuários verão ao fazer login...&#10;-- Este script será exibido no loader do usuário&#10;script_key = &quot;KEY_DO_USUARIO&quot;&#10;loadstring(game:HttpGet('...',true))()"></textarea>
+          <div class="form-hint">Este conteúdo será exibido para o usuário no painel de login (após a key ser verificada). A key do usuário é injetada automaticamente.</div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn-red" onclick="saveScript()">SALVAR SCRIPT</button>
+          <button class="btn btn-outline" onclick="loadScript()">↻ CARREGAR SALVO</button>
+        </div>
+
+        <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
+          <div class="panel-title" style="margin-bottom:16px">ATUALIZAR SCRIPT NO LUARMOR</div>
+          <div class="form-group">
+            <label class="form-label">Novo conteúdo para enviar ao Luarmor</label>
+            <textarea class="form-input" id="luarmor-script-content" placeholder="-- Cole o script para enviar diretamente ao Luarmor via API..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">FFA Mode</label>
+              <select class="form-input" id="luarmor-ffa"><option value="false">Desativado</option><option value="true">Ativado</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Silent Mode</label>
+              <select class="form-input" id="luarmor-silent"><option value="false">Desativado</option><option value="true">Ativado</option></select>
+            </div>
+          </div>
+          <button class="btn btn-red" onclick="pushScriptToLuarmor()">⚡ ENVIAR AO LUARMOR</button>
+          <div class="form-hint" style="margin-top:8px">Requer Luarmor API Key configurada nas configurações.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="content" id="tab-config">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">MERCADO PAGO</span></div>
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="form-label">Access Token (APP_USR-...)</label>
+          <input class="form-input" id="cfg-mp-token" type="password" placeholder="APP_USR-1234567890-abcdef...">
+          <div class="form-hint">Encontre em: mercadopago.com.br → Suas integrações → Credenciais</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Webhook URL do seu backend</label>
+          <input class="form-input" id="cfg-mp-webhook" placeholder="https://seu-backend.com/webhook/mp">
+          <div class="form-hint">Configure este URL no painel do Mercado Pago → IPN/Webhooks</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Preço 7 Dias (R$)</label>
+            <input class="form-input" id="cfg-price-7" type="number" step="0.01" placeholder="9.90">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preço 15 Dias (R$)</label>
+            <input class="form-input" id="cfg-price-15" type="number" step="0.01" placeholder="17.90">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preço 30 Dias (R$)</label>
+            <input class="form-input" id="cfg-price-30" type="number" step="0.01" placeholder="29.90">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preço Permanente (R$)</label>
+            <input class="form-input" id="cfg-price-perm" type="number" step="0.01" placeholder="79.90">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">LUARMOR API</span></div>
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="form-label">Luarmor API Key</label>
+          <input class="form-input" id="cfg-luarmor-key" type="password" placeholder="sua-luarmor-api-key">
+          <div class="form-hint">Encontre em: luarmor.net → Profile → API Key</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Project ID</label>
+            <input class="form-input" id="cfg-project-id" value="be96dbada933c2cce01bf0e9d2d49f52" readonly style="color:var(--muted);cursor:not-allowed">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Script ID</label>
+            <input class="form-input" id="cfg-script-id" value="d50d096921fc3d6157990616b5c64e97" readonly style="color:var(--muted);cursor:not-allowed">
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="testLuarmor()">TESTAR CONEXÃO LUARMOR</button>
+        <div id="luarmor-test-result" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">ADMIN / SEGURANÇA</span></div>
+      <div class="panel-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nova Senha Admin</label>
+            <input class="form-input" id="cfg-admin-pass" type="password" placeholder="••••••••">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar Senha</label>
+            <input class="form-input" id="cfg-admin-pass2" type="password" placeholder="••••••••">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-red" onclick="saveConfig()" style="margin-top:4px">SALVAR TODAS AS CONFIGURAÇÕES</button>
+  </div>
+
+  <!-- REVIEWS -->
+  <div class="content" id="tab-reviews">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">REVIEWS DOS USUÁRIOS</span>
+        <button class="btn btn-outline btn-sm" onclick="loadAdminReviews()">↻ ATUALIZAR</button>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nick</th><th>Plano</th><th>Estrelas</th><th>Comentário</th><th>Data</th><th>Ação</th></tr></thead>
+            <tbody id="reviews-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- KEY DETAIL MODAL -->
+<div class="overlay" id="modal-key">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Detalhes da Key</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-key-body"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const LUARMOR_PROJECT_ID = 'be96dbada933c2cce01bf0e9d2d49f52';
+const LUARMOR_SCRIPT_ID  = 'd50d096921fc3d6157990616b5c64e97';
+const ADMIN_DEFAULT_PASS = 'admin123'; // Altere nas configurações
+
+// ============================================================
+// STATE
+// ============================================================
+let isLoggedIn = false;
+let allKeys = [];
+let allOrders = [];
+let cfg = {};
+let lastGenKey = '';
+
+// ============================================================
+// LOGIN ADMIN
+// ============================================================
+function doAdminLogin() {
+  const user = document.getElementById('adm-user').value.trim();
+  const pass = document.getElementById('adm-pass').value;
+  const err  = document.getElementById('adm-err');
+  const savedPass = cfg.admin_password || ADMIN_DEFAULT_PASS;
+
+  if ((user === 'admin' || user === cfg.admin_user) && pass === savedPass) {
+    document.getElementById('login-screen').style.display = 'none';
+    isLoggedIn = true;
+    initAdmin();
+  } else {
+    err.classList.add('show');
+    setTimeout(() => err.classList.remove('show'), 2500);
+  }
+}
+
+document.getElementById('adm-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doAdminLogin();
+});
+
+// ============================================================
+// UTILS
+// ============================================================
+function toast(msg, duration=3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function closeModal() {
+  document.querySelectorAll('.overlay').forEach(o => o.classList.remove('show'));
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`tab-${tab}`)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.trim().toLowerCase().includes(tab === 'overview' ? 'over' : tab === 'keys' ? 'key' : tab === 'orders' ? 'vend' : tab === 'script' ? 'scri' : tab === 'config' ? 'config' : 'review'))
+      n.classList.add('active');
+  });
+  const titles = {overview:'OVERVIEW',keys:'GERENCIAR KEYS',orders:'VENDAS',script:'SCRIPT',config:'CONFIGURAÇÕES',reviews:'REVIEWS'};
+  document.getElementById('topbar-title').textContent = titles[tab] || tab.toUpperCase();
+
+  if (tab === 'keys') loadKeys();
+  if (tab === 'orders') loadOrders();
+  if (tab === 'config') loadConfig();
+  if (tab === 'reviews') loadAdminReviews();
+  if (tab === 'script') loadScript();
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtExpire(ts) {
+  if (!ts || ts < 0) return '∞ Permanente';
+  return new Date(ts*1000).toLocaleDateString('pt-BR');
+}
+
+function statusBadge(s) {
+  const map = {active:'active',pending:'pending',approved:'active',banned:'banned',expired:'expired'};
+  const cls = map[s] || 'pending';
+  return `<span class="badge ${cls}">${s}</span>`;
+}
+
+// ============================================================
+// FIREBASE HELPERS
+// ============================================================
+async function fbAdd(col, data) {
+  const {collection,addDoc,serverTimestamp} = window._fs;
+  return addDoc(collection(window._db,col),{...data,createdAt:serverTimestamp()});
+}
+async function fbGetAll(col, ord='createdAt', lim=200) {
+  const {collection,getDocs,query,orderBy,limit} = window._fs;
+  const q = query(collection(window._db,col),orderBy(ord,'desc'),limit(lim));
+  const snap = await getDocs(q);
+  return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function fbSet(col, docId, data) {
+  const {doc,setDoc,serverTimestamp} = window._fs;
+  return setDoc(doc(window._db,col,docId),{...data,updatedAt:serverTimestamp()},{merge:true});
+}
+async function fbDel(col, docId) {
+  const {doc,deleteDoc} = window._fs;
+  return deleteDoc(doc(window._db,col,docId));
+}
+async function fbGetDoc(col, docId) {
+  const {doc,getDoc} = window._fs;
+  const snap = await getDoc(doc(window._db,col,docId));
+  return snap.exists() ? {id:snap.id,...snap.data()} : null;
+}
+
+// ============================================================
+// LUARMOR API
+// ============================================================
+async function luarmorRequest(method, path, body=null) {
+  const apiKey = cfg.luarmor_api_key || '';
+  if (!apiKey) throw new Error('Luarmor API Key não configurada');
+
+  // ⚠️ Em produção, NUNCA chame a Luarmor API diretamente do browser.
+  // Use uma Firebase Cloud Function ou backend para fazer a chamada.
+  // Aqui está a estrutura correta para implementar no backend:
+  const opts = {
+    method,
+    headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(`https://api.luarmor.net/v3/${path}`, opts);
+  return res.json();
+}
+
+async function testLuarmor() {
+  const el = document.getElementById('luarmor-test-result');
+  el.textContent = '⏳ Testando...';
+  try {
+    // Luarmor API precisa ser chamada do backend por causa do CORS
+    // Aqui mostramos a instrução correta
+    el.textContent = '⚠️ A Luarmor API requer chamada via backend (CORS). Configure um Firebase Function ou servidor Node.js para proxy.';
+    el.style.color = 'var(--yellow)';
+  } catch(e) {
+    el.textContent = '❌ Erro: ' + e.message;
+    el.style.color = 'var(--red)';
+  }
+}
+
+// ============================================================
+// GERAR KEY — via Luarmor (precisa de backend em produção)
+// ============================================================
+async function generateKey() {
+  const days = parseInt(document.getElementById('gen-plan').value);
+  const email = document.getElementById('gen-email').value.trim();
+  const note = document.getElementById('gen-note').value.trim();
+
+  const btn = document.querySelector('#tab-keys .btn-red');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Gerando...';
+
+  try {
+    const body = { note: note || `Manual - ${days<0?'Permanente':days+'d'}` };
+    if (days > 0) body.key_days = days;
+    if (email) body.note = `${body.note} | ${email}`;
+
+    // Chamada ao Luarmor (em produção: via Firebase Function)
+    // const data = await luarmorRequest('POST', `projects/${LUARMOR_PROJECT_ID}/users`, body);
+
+    // SIMULAÇÃO (remover quando tiver backend):
+    const fakeKey = 'MNH' + Math.random().toString(36).substring(2,6).toUpperCase() + Math.random().toString(36).substring(2,6).toUpperCase() + Math.random().toString(36).substring(2,6).toUpperCase();
+    const data = { success: true, user_key: fakeKey };
+
+    if (data.success && data.user_key) {
+      lastGenKey = data.user_key;
+
+      // Salva no Firebase
+      await fbAdd('keys', {
+        key: data.user_key,
+        luarmor_key: data.user_key,
+        plan: days < 0 ? 'Permanente' : `${days} Dias`,
+        days, email, note, status: 'active',
+        expires_at: days < 0 ? -1 : Math.floor(Date.now()/1000) + (86400*days),
+        source: 'manual',
+        total_executions: 0
+      });
+
+      document.getElementById('gen-result').style.display = 'block';
+      document.getElementById('gen-result-key').textContent = data.user_key;
+      toast('✅ Key gerada e salva no Firebase!');
+      loadKeys();
+    } else {
+      toast('❌ Erro ao gerar key: ' + (data.message || 'Erro desconhecido'));
+    }
+  } catch(e) {
+    toast('❌ Erro: ' + e.message);
+  }
+
+  btn.disabled = false; btn.textContent = '⚡ GERAR KEY';
+}
+
+function copyGenKey() {
+  navigator.clipboard.writeText(lastGenKey).then(() => toast('✅ Key copiada!')).catch(() => toast('❌ Erro ao copiar'));
+}
+
+// ============================================================
+// LOAD KEYS
+// ============================================================
+async function loadKeys() {
+  try {
+    allKeys = await fbGetAll('keys');
+    renderKeys(allKeys);
+    document.getElementById('stat-total-keys').textContent = allKeys.length;
+  } catch(e) {
+    toast('⚠️ Firebase não configurado. Configure o firebaseConfig.');
+  }
+}
+
+function renderKeys(keys) {
+  const tbody = document.getElementById('keys-table-body');
+  if (!keys.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:32px">Nenhuma key encontrada</td></tr>'; return; }
+
+  tbody.innerHTML = keys.map(k => `
+    <tr>
+      <td style="color:var(--red)">${k.key?.substring(0,20) || '—'}...</td>
+      <td>${k.plan || '—'}</td>
+      <td>${k.email || '—'}</td>
+      <td>${fmtExpire(k.expires_at)}</td>
+      <td>${statusBadge(k.status || 'active')}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-outline btn-sm" onclick="viewKey('${k.id}')">VER</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteKey('${k.id}')">DEL</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterKeys(search) {
+  if (!search) { renderKeys(allKeys); return; }
+  const s = search.toLowerCase();
+  renderKeys(allKeys.filter(k =>
+    (k.key||'').toLowerCase().includes(s) ||
+    (k.email||'').toLowerCase().includes(s) ||
+    (k.hwid||'').toLowerCase().includes(s) ||
+    (k.plan||'').toLowerCase().includes(s)
+  ));
+}
+
+async function viewKey(id) {
+  const k = allKeys.find(x=>x.id===id) || await fbGetDoc('keys',id);
+  if (!k) { toast('❌ Key não encontrada'); return; }
+
+  document.getElementById('modal-key-body').innerHTML = `
+    <div style="display:grid;gap:10px">
+      <div><div class="form-label">KEY</div><div style="font-family:'Share Tech Mono',monospace;color:var(--red);font-size:13px;margin-top:4px">${k.key}</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><div class="form-label">PLANO</div><div style="margin-top:4px">${k.plan||'—'}</div></div>
+        <div><div class="form-label">STATUS</div><div style="margin-top:4px">${statusBadge(k.status||'active')}</div></div>
+        <div><div class="form-label">EMAIL</div><div style="margin-top:4px;font-size:12px">${k.email||'—'}</div></div>
+        <div><div class="form-label">VENCIMENTO</div><div style="margin-top:4px">${fmtExpire(k.expires_at)}</div></div>
+        <div><div class="form-label">EXECUÇÕES</div><div style="margin-top:4px">${k.total_executions||0}</div></div>
+        <div><div class="form-label">CRIADO EM</div><div style="margin-top:4px;font-size:11px">${fmtDate(k.createdAt)}</div></div>
+      </div>
+      <div><div class="form-label">HWID</div><div style="margin-top:4px;font-size:11px;color:var(--muted)">${k.hwid||'Não vinculado'}</div></div>
+      <div><div class="form-label">NOTA</div><div style="margin-top:4px;color:var(--muted)">${k.note||'—'}</div></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-outline btn-sm" onclick="resetKeyHwid('${k.id}','${k.key}')">RESET HWID</button>
+        <button class="btn btn-danger btn-sm" onclick="banKey('${k.id}')">BANIR KEY</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-key').classList.add('show');
+}
+
+async function deleteKey(id) {
+  if (!confirm('Tem certeza que deseja deletar esta key? Esta ação é irreversível.')) return;
+  try {
+    await fbDel('keys', id);
+    toast('✅ Key deletada.');
+    loadKeys();
+  } catch(e) { toast('❌ Erro ao deletar: ' + e.message); }
+}
+
+async function resetKeyHwid(id, key) {
+  try {
+    await fbSet('keys', id, { hwid: null, status: 'reset' });
+    // Em produção: chamar Luarmor API via backend
+    toast('✅ HWID resetado no Firebase. Configure o backend para resetar no Luarmor também.');
+    closeModal();
+    loadKeys();
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+async function banKey(id) {
+  try {
+    await fbSet('keys', id, { status: 'banned' });
+    toast('✅ Key banida.');
+    closeModal();
+    loadKeys();
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+// ============================================================
+// ORDERS
+// ============================================================
+async function loadOrders() {
+  try {
+    allOrders = await fbGetAll('orders');
+    renderOrders(allOrders);
+    calcStats();
+    renderOverviewOrders(allOrders.slice(0,8));
+    renderChart(allOrders);
+  } catch(e) {
+    toast('⚠️ Firebase não configurado.');
+  }
+}
+
+function renderOrders(orders) {
+  const tbody = document.getElementById('orders-table-body');
+  if (!orders.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--dim);padding:32px">Nenhuma venda ainda</td></tr>'; return; }
+
+  tbody.innerHTML = orders.map(o => `
+    <tr>
+      <td style="font-size:10px;color:var(--dim)">${o.id.substring(0,8)}...</td>
+      <td>${o.email||'—'}</td>
+      <td>${o.plan||'—'}</td>
+      <td style="color:var(--green)">R$ ${o.price||'—'}</td>
+      <td style="font-size:10px;color:var(--red)">${(o.key||'—').substring(0,16)}${o.key?'...':''}</td>
+      <td>${statusBadge(o.status||'pending')}</td>
+      <td style="font-size:11px;color:var(--dim)">${fmtDate(o.createdAt)}</td>
+      <td>
+        ${o.status==='pending' ? `<button class="btn btn-outline btn-sm" onclick="approveOrder('${o.id}')">APROVAR</button>` : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderOverviewOrders(orders) {
+  const tbody = document.getElementById('overview-orders-body');
+  tbody.innerHTML = orders.map(o => `
+    <tr>
+      <td>${o.email||'—'}</td>
+      <td>${o.plan||'—'}</td>
+      <td style="color:var(--red);font-size:10px">${(o.key||'—').substring(0,14)}${o.key?'...':''}</td>
+      <td>${statusBadge(o.status||'pending')}</td>
+      <td style="font-size:11px;color:var(--dim)">${fmtDate(o.createdAt)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:20px">Nenhuma venda</td></tr>';
+}
+
+async function approveOrder(id) {
+  try {
+    // Gerar key no Luarmor (via backend em produção)
+    const fakeKey = 'MNH-' + Math.random().toString(36).substring(2,6).toUpperCase() + '-' + Math.random().toString(36).substring(2,6).toUpperCase() + '-' + Math.random().toString(36).substring(2,6).toUpperCase();
+    const order = allOrders.find(o=>o.id===id);
+
+    await fbSet('orders', id, { status: 'approved', key: fakeKey });
+    await fbAdd('keys', {
+      key: fakeKey, luarmor_key: fakeKey,
+      plan: order?.plan, email: order?.email,
+      days: order?.days,
+      expires_at: order?.days < 0 ? -1 : Math.floor(Date.now()/1000) + (86400*(order?.days||30)),
+      status: 'active', source: 'purchase', total_executions: 0
+    });
+
+    toast(`✅ Pedido aprovado! Key gerada: ${fakeKey}`);
+    loadOrders();
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+function calcStats() {
+  const now = Date.now();
+  const day=86400000, week=604800000, month=2592000000;
+  const approved = allOrders.filter(o=>o.status==='approved'||o.status==='active');
+
+  const ts = o => o.createdAt?.toDate ? o.createdAt.toDate().getTime() : (o.createdAt||0);
+  document.getElementById('stat-today').textContent  = approved.filter(o=>now-ts(o)<day).length;
+  document.getElementById('stat-week').textContent   = approved.filter(o=>now-ts(o)<week).length;
+  document.getElementById('stat-month').textContent  = approved.filter(o=>now-ts(o)<month).length;
+}
+
+function renderChart(orders) {
+  const days = Array.from({length:7},(_,i)=>{
+    const d = new Date(); d.setDate(d.getDate()-i); return d;
+  }).reverse();
+
+  const counts = days.map(d => {
+    return orders.filter(o=>{
+      const t = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt||0);
+      return t.toDateString()===d.toDateString() && (o.status==='approved'||o.status==='active');
+    }).length;
+  });
+
+  const max = Math.max(...counts,1);
+  const barsEl = document.getElementById('chart-bars');
+  const labelsEl = document.getElementById('chart-labels');
+
+  barsEl.innerHTML = counts.map((c,i) => `
+    <div class="chart-bar" style="height:${(c/max)*100}%" data-v="${c}" title="${c} vendas"></div>
+  `).join('');
+
+  labelsEl.innerHTML = days.map(d =>
+    `<div class="chart-label">${d.toLocaleDateString('pt-BR',{weekday:'short'})}</div>`
+  ).join('');
+}
+
+// ============================================================
+// SCRIPT
+// ============================================================
+async function loadScript() {
+  try {
+    const docs = await fbGetAll('config',  'createdAt', 1);
+    if (docs[0]?.script) {
+      document.getElementById('script-content').value = docs[0].script;
+      toast('✅ Script carregado do Firebase.');
+    }
+  } catch(e) { toast('⚠️ Firebase não configurado.'); }
+}
+
+async function saveScript() {
+  const script = document.getElementById('script-content').value.trim();
+  if (!script) { toast('❌ Script vazio.'); return; }
+  try {
+    await fbSet('config', 'hub_script', { script });
+    toast('✅ Script salvo no Firebase!');
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+async function pushScriptToLuarmor() {
+  const script = document.getElementById('luarmor-script-content').value.trim();
+  const ffa = document.getElementById('luarmor-ffa').value === 'true';
+  const silent = document.getElementById('luarmor-silent').value === 'true';
+  if (!script) { toast('❌ Cole o script antes de enviar.'); return; }
+
+  try {
+    // Em produção: chame via Firebase Function (CORS bloqueado no browser)
+    // PUT https://api.luarmor.net/v3/projects/PROJECT_ID/scripts/SCRIPT_ID
+    // { script, ffa, silent }
+    toast('⚠️ Envio ao Luarmor requer backend. Estrutura:\nPUT /v3/projects/' + LUARMOR_PROJECT_ID + '/scripts/' + LUARMOR_SCRIPT_ID, 5000);
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+// ============================================================
+// CONFIG
+// ============================================================
+async function loadConfig() {
+  try {
+    const doc = await fbGetDoc('config', 'settings');
+    if (doc) {
+      cfg = {...cfg, ...doc};
+      if (doc.mp_token) document.getElementById('cfg-mp-token').value = doc.mp_token;
+      if (doc.mp_webhook) document.getElementById('cfg-mp-webhook').value = doc.mp_webhook;
+      if (doc.price_7) document.getElementById('cfg-price-7').value = doc.price_7;
+      if (doc.price_15) document.getElementById('cfg-price-15').value = doc.price_15;
+      if (doc.price_30) document.getElementById('cfg-price-30').value = doc.price_30;
+      if (doc.price_perm) document.getElementById('cfg-price-perm').value = doc.price_perm;
+      if (doc.luarmor_api_key) document.getElementById('cfg-luarmor-key').value = doc.luarmor_api_key;
+    }
+  } catch(e) {}
+}
+
+async function saveConfig() {
+  const p1 = document.getElementById('cfg-admin-pass').value;
+  const p2 = document.getElementById('cfg-admin-pass2').value;
+  if (p1 && p1 !== p2) { toast('❌ As senhas não coincidem.'); return; }
+
+  const data = {
+    mp_token: document.getElementById('cfg-mp-token').value,
+    mp_webhook: document.getElementById('cfg-mp-webhook').value,
+    price_7: document.getElementById('cfg-price-7').value,
+    price_15: document.getElementById('cfg-price-15').value,
+    price_30: document.getElementById('cfg-price-30').value,
+    price_perm: document.getElementById('cfg-price-perm').value,
+    luarmor_api_key: document.getElementById('cfg-luarmor-key').value,
+    luarmor_project_id: LUARMOR_PROJECT_ID,
+    luarmor_script_id: LUARMOR_SCRIPT_ID,
+  };
+  if (p1) data.admin_password = p1;
+
+  try {
+    await fbSet('config', 'settings', data);
+    cfg = {...cfg, ...data};
+    toast('✅ Configurações salvas no Firebase!');
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+// ============================================================
+// REVIEWS ADMIN
+// ============================================================
+async function loadAdminReviews() {
+  try {
+    const reviews = await fbGetAll('reviews');
+    const tbody = document.getElementById('reviews-table-body');
+    if (!reviews.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:32px">Nenhum review</td></tr>'; return; }
+    tbody.innerHTML = reviews.map(r => `
+      <tr>
+        <td>${r.nick||'—'}</td>
+        <td>${r.plan||'—'}</td>
+        <td style="color:var(--red)">${'★'.repeat(r.stars||5)}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.text||'—'}</td>
+        <td style="font-size:11px;color:var(--dim)">${fmtDate(r.createdAt)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteReview('${r.id}')">DEL</button></td>
+      </tr>
+    `).join('');
+  } catch(e) { toast('⚠️ Firebase não configurado.'); }
+}
+
+async function deleteReview(id) {
+  if (!confirm('Deletar este review?')) return;
+  try {
+    await fbDel('reviews', id);
+    toast('✅ Review deletado.');
+    loadAdminReviews();
+  } catch(e) { toast('❌ Erro: ' + e.message); }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function initAdmin() {
+  await loadConfig();
+  await loadOrders();
+  await loadKeys();
+
+  // Verifica Luarmor
+  const luarmorEl = document.getElementById('topbar-luarmor');
+  if (cfg.luarmor_api_key) {
+    luarmorEl.textContent = 'Luarmor: configurado ✓';
+    luarmorEl.style.color = 'var(--green)';
+  } else {
+    luarmorEl.textContent = 'Luarmor: ⚠️ configure a API key';
+    luarmorEl.style.color = 'var(--yellow)';
+  }
+}
+
+window.addEventListener('firebaseReady', () => {
+  loadConfig().catch(()=>{});
+});
+</script>
+</body>
+</html>
